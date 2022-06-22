@@ -38,4 +38,7 @@ override.tf.json
 .terraformrc
 terraform.rc
 
+# SSH Key
+appturma08
+
 # End of https://www.toptal.com/developers/gitignore/api/terraform
