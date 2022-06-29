@@ -1,6 +1,6 @@
 variable "project" {
   type    = string
-  default = "coxinha"
+  default = "turma-08"
 }
 
 
@@ -53,4 +53,9 @@ variable "vpc_name" {
 variable "create_zone_dns" {
   type = bool
   default = false
+}
+
+variable "env" {
+  type = string
+  default = "dev"
 }
