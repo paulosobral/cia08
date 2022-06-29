@@ -4,6 +4,7 @@ resource "aws_key_pair" "app-ssh-key" {
 }
 
 resource "aws_instance" "app-ec2" {
+  count                       = lookup(var.instance_count, terraform.workspace)
   ami                         = data.aws_ami.amazon-lnx.id
   instance_type               = lookup(var.instance_type_app, local.env)
   subnet_id                   = data.aws_subnet.app-public-subnet.id
@@ -11,19 +12,20 @@ resource "aws_instance" "app-ec2" {
   tags = {
     Name = format("%s-app", local.name)
   }
-  key_name  = aws_key_pair.app-ssh-key.key_name
-  user_data = file("ec2.sh")
+  key_name  = aws_key_pair.app-ssh-key.id
+  user_data = data.template_file.ec2-app.rendered
 }
 
-resource "aws_instance" "app-mongodb" {
+resource "aws_instance" "app-mongdb" {
   ami           = data.aws_ami.amazon-lnx.id
   instance_type = var.instance_type_mongodb
   subnet_id     = data.aws_subnet.app-public-subnet.id
+  associate_public_ip_address = false
   tags = {
     Name = format("%s-mongodb", local.name)
   }
-  key_name  = aws_key_pair.app-ssh-key.key_name
-  user_data = file("mongodb.sh")
+  key_name  = aws_key_pair.app-ssh-key.id
+  user_data = data.template_file.ec2-mongodb.rendered
 }
 
 resource "aws_security_group" "allow-http-ssh" {
@@ -117,35 +119,29 @@ resource "aws_security_group" "allow-mongodb" {
 }
 
 resource "aws_network_interface_sg_attachment" "app-sg" {
+  count                       = lookup(var.instance_count, terraform.workspace)
   security_group_id    = aws_security_group.allow-http-ssh.id
-  network_interface_id = aws_instance.app-ec2.primary_network_interface_id
+  network_interface_id = aws_instance.app-ec2[count.index].primary_network_interface_id
 }
 
 resource "aws_network_interface_sg_attachment" "mongodb-sg" {
   security_group_id    = aws_security_group.allow-mongodb.id
-  network_interface_id = aws_instance.app-mongodb.primary_network_interface_id
+  network_interface_id = aws_instance.app-mongdb.primary_network_interface_id
 }
 
 resource "aws_route53_zone" "app-zone" {
   name = format("%s.com.br", var.project)
-
+  count = terraform.workspace == "prod" ? 1 : var.create_zone_dns == false ? 0 : 1
   vpc {
     vpc_id = data.aws_vpc.vpc.id
   }
 }
 
 resource "aws_route53_record" "mongodb" {
-  zone_id = aws_route53_zone.app-zone.id
+  count   = terraform.workspace == "prod" ? 1 : var.create_zone_dns == false ? 0 : 1
+  zone_id = aws_route53_zone.app-zone[count.index].id
   name    = format("mongodb.%s.com.br", var.project)
   type    = "A"
   ttl     = "300"
-  records = [aws_instance.app-mongodb.private_ip]
-}
-
-output "app_public_ip" {
-  value = aws_instance.app-ec2.public_ip
-}
-
-output "mongo" {
-  value = aws_instance.app-mongodb.private_ip
+  records = [aws_instance.app-mongdb.private_ip]
 }

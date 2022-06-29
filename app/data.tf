@@ -23,3 +23,20 @@ data "aws_vpc" "vpc" {
         values = [var.vpc_name]
     }
 }
+
+data "template_file" "ec2-mongodb" {
+  template = file("mongodb.sh")
+  vars = {
+    version = var.mongodb_version
+  }
+}
+
+data "template_file" "ec2-app" {
+  template = file("ec2.sh")
+  vars = {
+    image = lookup(var.ec2-app, "image")
+    version = lookup(var.ec2-app, "version")
+    port = lookup(var.ec2-app, "port")
+    mongodb_server = aws_instance.app-mongdb.private_ip
+  }
+}
