@@ -4,7 +4,7 @@ module "turma08_app" {
     vpc_name = "turma-08"
     project = "turma-08-modulo"
     env = var.env
-    create_zone_dns = "true"
+    create_zone_dns = var.create_zone_dns
 }
 
 output "ip_app" {
@@ -22,5 +22,5 @@ variable "env" {
 
 variable "create_zone_dns" {
   type = bool
-  default = true
+  default = false
 }
