@@ -3,7 +3,7 @@ module "turma08" {
     name = var.vpc_name
     cidr = "10.0.0.0/16"
 
-    azs = ["us-west-2a", "us-west-2a"]
+    azs = ["us-west-2a", "us-west-2b"]
     public_subnets = var.cidr_subnet_public
 
     enable_nat_gateway = false
