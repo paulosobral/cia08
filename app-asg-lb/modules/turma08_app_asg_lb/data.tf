@@ -22,14 +22,14 @@ data "aws_subnet" "app_subnet2" {
 }
 
 data "template_file" "mongodb_startup_script" {
-  template = file("mongodb.sh")
+  template = file("${path.module}/files/mongodb.sh")
   vars = {
     "tag" = "5.0.2"
   }
 }
 
 data "template_file" "app_startup_script" {
-  template = file("app.sh")
+  template = file("${path.module}/files/app.sh")
   vars = {
     image          = lookup(var.app_docker, "image")
     tag            = lookup(var.app_docker, "tag")
